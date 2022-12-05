@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.enjoytrip.content.model.mapper.ContentMapper">
+    <resultMap id="area" type="areaDto">
+        <result column="area_code" property="areaCode" />
+        <result column="area_name" property="areaName" />
+    </resultMap>
+
+    <resultMap id="sigungu" type="sigunguDto">
+        <result column="sigungu_code" property="sigunguCode" />
+        <result column="sigungu_name" property="sigunguName" />
+    </resultMap>
+
+    <resultMap id="placeInfo" type="placeDto">
+        <result column="content_id" property="contentId" />
+        <result column="title" property="title" />
+        <result column="address" property="address" />
+        <result column="area_code" property="areaCode" />
+        <result column="sigungu_code" property="sigunguCode" />
+        <result column="content_type_id" property="contentType" />
+        <result column="place_img" property="placeImg" />
+        <result column="place_img_thumbnail" property="placeThumbnail" />
+        <result column="map_x" property="mapX" />
+        <result column="map_y" property="mapY" />
+        <result column="tel" property="tel" />
+        <result column="zipcode" property="zipCode" />
+    </resultMap>
+
+    <resultMap id="planInfo" type="planDto">
+        <result column="article_no" property="articleNo" />
+        <result column="user_id" property="userId" />
+        <result column="title" property="title" />
+        <result column="startDate" property="startDate" />
+        <result column="endDate" property="endDate" />
+        <result column="register_date" property="registerDate" />
+        <result column="hit" property="hit" />
+    </resultMap>
+
+    <resultMap id="planPlaceInfo" type="planPlaceDto">
+        <result column="article_no" property="articleNo" />
+        <result column="content_id" property="contentId" />
+        <result column="plan_date" property="planDate" />
+        <result column="memo" property="memo" />
+    </resultMap>
+
+    <select id="getAreaCode" resultMap="area">
+        select *
+        from area
+    </select>
+
+    <select id="getSigunguCode" parameterType="int" resultMap="sigungu">
+        select sigungu_code, sigungu_name
+        from sigungu
+        where area_code = #{areaCode}
+    </select>
+
+    <select id="getPlaceInfo" parameterType="map" resultMap="placeInfo">
+        select *
+        from place_info
+        where area_code = #{areaCode} and sigungu_code = #{sigunguCode}
+        and map_x between 124 and 132 and map_y between 33 and 40
+    </select>
+
+    <select id="getRandomPlaceInfo" resultMap="placeInfo">
+        select *
+        from place_info
+        where map_x between 124 and 132 and map_y between 33 and 40
+        order by rand()
+        limit 10
+    </select>
+
+    <select id="getSearchPlaceInfo" parameterType="map" resultMap="placeInfo">
+        select *
+        from place_info
+        where title like concat('%', #{key}, '%')
+        and map_x between 124 and 132 and map_y between 33 and 40
+    </select>
+
+    <insert id="writePlan" parameterType="planDto">
+        insert into plan (user_id, title, startDate, endDate, hit, register_date)
+        values (#{userId}, #{title}, #{startDate}, #{endDate}, 0, now())
+        <selectKey resultType="int" keyProperty="articleNo" order="AFTER">
+            select last_insert_id()
+        </selectKey>
+    </insert>
+
+    <insert id="writePlanPlace" parameterType="planDto">
+        insert into plan_place_info (article_no, content_id, plan_date, memo)
+        values
+        <foreach collection="contentList" item="content" separator=" , ">
+            (#{articleNo}, #{content.contentId}, #{content.planDate}, #{content.memo})
+        </foreach>
+    </insert>
+
+    <select id="getPlanList" resultMap="planInfo">
+        select article_no, user_id, title, startDate, endDate, register_date, hit
+        from plan
+    </select>
+
+    <select id="getUserPlanList" parameterType="String" resultMap="planInfo">
+        select article_no, user_id, title, startDate, endDate, register_date, hit
+        from plan
+        where user_id = #{userId}
+    </select>
+
+    <select id="getPlanPlaceList" parameterType="int" resultMap="planPlaceInfo">
+        select article_no, content_id, plan_date, memo
+        from plan_place_info
+        where article_no = #{articleNo}
+    </select>
+
+    <select id="getPlaceItem" parameterType="int" resultMap="placeInfo">
+        select *
+        from place_info
+        where content_id = #{contentId}
+    </select>
+
+    <update id="updateHit" parameterType="int">
+        update plan
+        set hit = hit + 1
+        where article_no = #{articleNo}
+    </update>
+
+    <delete id="deletePlan" parameterType="int">
+        delete from plan
+        where article_no = #{articleNo}
+    </delete>
+
+    <delete id="deletePlanPlace" parameterType="int">
+        delete from plan_place_info
+        where article_no = #{articleNo}
+    </delete>
+
+
+</mapper>
